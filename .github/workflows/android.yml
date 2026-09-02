@@ -1,35 +1,41 @@
-name: Build Android APK & AAB
+name: Build Admin & User APKs
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-user:
+    name: Build User APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 22
 
-      - name: Install Dependencies with Bun
-        run: |
-          bun install
-          bun add @capacitor/core @capacitor/cli @capacitor/android
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Ensure Capacitor Config Exists
+      - name: Install Capacitor Android
         run: |
-          cat << 'EOF' > capacitor.config.ts
-          import { CapacitorConfig } from '@capacitor/cli';
+          npm install @capacitor/cli @capacitor/android
+
+      - name: Build User Web App
+        run: npm run build:mobile
+
+      - name: Create User Capacitor Config
+        run: |
+          cat > capacitor.config.ts << 'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
 
           const config: CapacitorConfig = {
             appId: 'com.orjonmcq.app',
             appName: 'Orjon MCQ',
-            webDir: 'dist',
+            webDir: 'dist-mobile',
             server: {
               androidScheme: 'https'
             }
@@ -38,37 +44,93 @@ jobs:
           export default config;
           EOF
 
-      - name: Build Web Application
-        run: |
-          bun run build || true
-
-      - name: Setup Java JDK 21
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: temurin
+          java-version: 21
 
-      - name: Generate Android Project & Sync
+      - name: Generate Android Project
         run: |
-          mkdir -p dist
           npx cap add android || true
           npx cap sync android
 
-      - name: Build Android App (APK & AAB)
+      - name: Build User APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          ./gradlew bundleRelease --no-daemon
 
-      - name: Upload Debug APK
+      - name: Upload User APK
         uses: actions/upload-artifact@v4
         with:
-          name: App-Debug-APK
+          name: Orjon-User-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload Unsigned Release AAB
+  build-admin:
+    name: Build Admin APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install Capacitor Android
+        run: |
+          npm install @capacitor/cli @capacitor/android
+
+      - name: Build Admin Web App
+        run: npm run build:admin
+
+      - name: Create Admin Capacitor Config
+        run: |
+          cat > capacitor.config.ts << 'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'com.orjonmcq.admin',
+            appName: 'Orjon MCQ Admin',
+            webDir: 'dist-admin',
+            server: {
+              androidScheme: 'https'
+            }
+          };
+
+          export default config;
+          EOF
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Generate Android Project
+        run: |
+          npx cap add android || true
+          npx cap sync android
+
+      - name: Build Admin APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename Admin APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             android/app/build/outputs/apk/debug/orjon-admin-debug.apk
+
+      - name: Upload Admin APK
         uses: actions/upload-artifact@v4
         with:
-          name: App-Release-AAB
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          name: Orjon-Admin-Debug-APK
+          path: android/app/build/outputs/apk/debug/orjon-admin-debug.apk
