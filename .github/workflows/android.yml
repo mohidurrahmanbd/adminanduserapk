@@ -1,136 +1,159 @@
 name: Build Admin & User APKs
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
 jobs:
-  build-user:
-    name: Build User APK
-    runs-on: ubuntu-latest
+build-user:
+name: Build User APK
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 22
 
-      - name: Install Dependencies
-        run: npm install
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: 21
 
-      - name: Install Capacitor Android
-        run: |
-          npm install @capacitor/cli @capacitor/android
+  - name: Install Dependencies
+    run: |
+      npm install
+      npm install @capacitor/cli @capacitor/android
 
-      - name: Build User Web App
-        run: npm run build:mobile
+  - name: Build Mobile
+    run: npm run build:mobile
 
-      - name: Create User Capacitor Config
-        run: |
-          cat > capacitor.config.ts << 'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
+  - name: Inspect Mobile Output
+    run: |
+      echo "===== DIST-MOBILE ====="
+      find dist-mobile -type f | sort || true
 
-          const config: CapacitorConfig = {
-            appId: 'com.orjonmcq.app',
-            appName: 'Orjon MCQ',
-            webDir: 'dist-mobile',
-            server: {
-              androidScheme: 'https'
-            }
-          };
+  - name: Ensure Mobile index.html Exists
+    run: |
+      if [ -f dist-mobile/index-mobile.html ]; then
+        cp dist-mobile/index-mobile.html dist-mobile/index.html
+      fi
 
-          export default config;
-          EOF
+      if [ ! -f dist-mobile/index.html ]; then
+        echo "ERROR: dist-mobile/index.html not found"
+        exit 1
+      fi
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+  - name: Create User Capacitor Config
+    run: |
+      cat > capacitor.config.ts << 'EOF'
+      import type { CapacitorConfig } from '@capacitor/cli';
 
-      - name: Generate Android Project
-        run: |
-          npx cap add android || true
-          npx cap sync android
+      const config: CapacitorConfig = {
+        appId: 'com.orjonmcq.app',
+        appName: 'Orjon MCQ',
+        webDir: 'dist-mobile',
+        server: {
+          androidScheme: 'https'
+        }
+      };
 
-      - name: Build User APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+      export default config;
+      EOF
 
-      - name: Upload User APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Orjon-User-Debug-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+  - name: Generate Android Project
+    run: |
+      npx cap add android || true
+      npx cap sync android
 
-  build-admin:
-    name: Build Admin APK
-    runs-on: ubuntu-latest
+  - name: Build User APK
+    run: |
+      cd android
+      chmod +x gradlew
+      ./gradlew assembleDebug --no-daemon
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  - name: Upload User APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Orjon-User-Debug-APK
+      path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+build-admin:
+name: Build Admin APK
+runs-on: ubuntu-latest
 
-      - name: Install Dependencies
-        run: npm install
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
 
-      - name: Install Capacitor Android
-        run: |
-          npm install @capacitor/cli @capacitor/android
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 22
 
-      - name: Build Admin Web App
-        run: npm run build:admin
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: 21
 
-      - name: Create Admin Capacitor Config
-        run: |
-          cat > capacitor.config.ts << 'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
+  - name: Install Dependencies
+    run: |
+      npm install
+      npm install @capacitor/cli @capacitor/android
 
-          const config: CapacitorConfig = {
-            appId: 'com.orjonmcq.admin',
-            appName: 'Orjon MCQ Admin',
-            webDir: 'dist-admin',
-            server: {
-              androidScheme: 'https'
-            }
-          };
+  - name: Build Admin
+    run: npm run build:admin
 
-          export default config;
-          EOF
+  - name: Inspect Admin Output
+    run: |
+      echo "===== DIST-ADMIN ====="
+      find dist-admin -type f | sort || true
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+  - name: Ensure Admin index.html Exists
+    run: |
+      if [ -f dist-admin/index-admin.html ]; then
+        cp dist-admin/index-admin.html dist-admin/index.html
+      fi
 
-      - name: Generate Android Project
-        run: |
-          npx cap add android || true
-          npx cap sync android
+      if [ ! -f dist-admin/index.html ]; then
+        echo "ERROR: dist-admin/index.html not found"
+        exit 1
+      fi
 
-      - name: Build Admin APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+  - name: Create Admin Capacitor Config
+    run: |
+      cat > capacitor.config.ts << 'EOF'
+      import type { CapacitorConfig } from '@capacitor/cli';
 
-      - name: Rename Admin APK
-        run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk \
-             android/app/build/outputs/apk/debug/orjon-admin-debug.apk
+      const config: CapacitorConfig = {
+        appId: 'com.orjonmcq.admin',
+        appName: 'Orjon MCQ Admin',
+        webDir: 'dist-admin',
+        server: {
+          androidScheme: 'https'
+        }
+      };
 
-      - name: Upload Admin APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Orjon-Admin-Debug-APK
-          path: android/app/build/outputs/apk/debug/orjon-admin-debug.apk
+      export default config;
+      EOF
+
+  - name: Generate Android Project
+    run: |
+      npx cap add android || true
+      npx cap sync android
+
+  - name: Build Admin APK
+    run: |
+      cd android
+      chmod +x gradlew
+      ./gradlew assembleDebug --no-daemon
+
+  - name: Upload Admin APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Orjon-Admin-Debug-APK
+      path: android/app/build/outputs/apk/debug/app-debug.apk
