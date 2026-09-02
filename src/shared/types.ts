@@ -1,0 +1,321 @@
+export interface GlobalSyncVersions {
+  questionVersion: number;
+  categoryVersion: number;
+  subcategoryVersion: number;
+  courseVersion: number;
+  examVersion: number;
+  routineVersion: number;
+  updatedAt?: string;
+}
+
+export interface QuestionComment {
+  id: string;
+  userPhone: string;
+  userName: string;
+  text: string;
+  createdAt: string;
+  pointsApproved?: boolean;
+}
+
+export interface UserExplanation {
+  id: string;
+  userPhone: string;
+  userName: string;
+  text: string;
+  approved: boolean;
+  createdAt: string;
+  pointsApproved?: boolean;
+}
+
+export interface Question {
+  id: string;
+  text: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correct: 'Option A' | 'Option B' | 'Option C' | 'Option D';
+  explanation: string;
+  category: string;
+  subcategory: string; // e.g. "45th BCS", "Primary Teacher 2023", etc.
+  categories?: string[];
+  subcategories?: string[];
+  csvCategory?: string;
+  csvSubcategory?: string;
+  examCategory?: string;
+  examSubcategory?: string;
+  examPath?: string[];
+  subjectCategory?: string;
+  subjectSubcategory?: string;
+  subjectPath?: string[];
+  comments?: QuestionComment[];
+  userExplanations?: UserExplanation[];
+  createdAt?: string;
+  date?: string;
+  version?: number;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  isDeleted?: boolean;
+}
+
+export interface User {
+  userId?: string;         // Auto generated unique User ID e.g. MDH-7A39B
+  email?: string;          // User Email address
+  emailVerified?: boolean; // Email verification status
+  phone: string;
+  name: string;
+  gender: string;
+  education: string;
+  avatar: string;
+  lifetimeAnswered: number;
+  lifetimeCorrect: number;
+  lifetimeWrong: number;
+  createdAt: string;
+}
+
+export const generateAutoUserId = (): string => {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let rand = '';
+  for (let i = 0; i < 6; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return rand;
+};
+
+export interface Attempt {
+  id: string;
+  userPhone: string;
+  username: string;
+  examId: string;
+  examTitle: string;
+  score: number;
+  correctCount: number;
+  wrongCount: number;
+  totalQuestions: number;
+  categoryAnalysis: Record<string, { correct: number; total: number }>;
+  incorrectQuestionIds: string[];
+  userSelectedAnswers: Record<number, string>; // index -> selected option key or 'Skipped'
+  activeQuizQuestions: Question[]; // Snapshots of questions at that exam
+  submittedAt: string;
+  updatedAt?: string;
+  userEmail?: string;     // User email address
+}
+
+export interface Notice {
+  id: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;           // e.g. "WELCOME50", "ORJON100" (uppercased)
+  discountPercent: number; // 1 to 100
+  courseId?: string;       // Specific course ID or empty for all courses
+  courseTitle?: string;    // Display title of course
+  description?: string;    // e.g. "৫০% স্পেশাল ছাড় কুপন"
+  expiryDate?: string;     // YYYY-MM-DD
+  isActive: boolean;
+  createdAt: string;
+  usageCount?: number;
+}
+
+export interface CourseEnrollment {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  userPhone: string;
+  userName?: string;
+  userEmail?: string;
+  userId?: string;
+  enrolledAt: string;
+  originalPrice: number;
+  discountPercent: number;
+  discountAmount: number;
+  finalPrice: number;
+  couponCode?: string;
+  paymentMethod?: string;
+  trxId?: string;
+  paymentStatus: 'paid' | 'free' | 'pending';
+}
+
+export interface PaymentSettings {
+  bkashNumber: string;
+  bkashType: 'Personal' | 'Merchant' | 'Agent';
+  nagadNumber: string;
+  nagadType: 'Personal' | 'Merchant' | 'Agent';
+  rocketNumber: string;
+  rocketType: 'Personal' | 'Merchant' | 'Agent';
+  instructions?: string;
+  updatedAt?: string;
+}
+
+export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
+  bkashNumber: '01711223344',
+  bkashType: 'Personal',
+  nagadNumber: '01811223344',
+  nagadType: 'Personal',
+  rocketNumber: '01911223344',
+  rocketType: 'Personal',
+  instructions: 'টাকা পাঠানোর পর ট্রানজেকশন আইডি (TrxID) এবং আপনার মোবাইল নম্বর নিচে প্রদান করুন।'
+};
+
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  status: 'active' | 'upcoming' | 'completed';
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+  price?: number;          // Course price in BDT (0 or undefined = Free)
+  originalPrice?: number;  // Optional regular/original price (for strikethrough comparison)
+  coupons?: Coupon[];      // Optional course-specific coupons
+  version?: number;
+  deletedAt?: string | null;
+  isDeleted?: boolean;
+}
+
+export interface ScheduledExamConfig {
+  enabled: boolean;
+  startTime: string; // ISO or YYYY-MM-DDTHH:mm
+  expiryTime?: string; // ISO or YYYY-MM-DDTHH:mm
+  timeLimit: number; // in minutes
+  qLimit: number; // number of MCQs
+  totalMarks: number;
+  passMarks: number;
+  questionSelection: 'auto' | 'manual';
+  questionIds?: string[];
+  updatedAt?: string;
+}
+
+export interface Routine {
+  id: string;
+  title: string;
+  details: string;
+  createdAt: string;
+  updatedAt?: string;
+  courseId?: string;
+  courseName?: string;
+  // Syllabus Topics (Cascading)
+  selectedCategories?: string[];
+  selectedSubcategories?: string[];
+  selectedLeafCategories?: string[];
+  // Scheduled Exam configuration
+  examConfig?: ScheduledExamConfig;
+  examDate?: string;
+  version?: number;
+  deletedAt?: string | null;
+  isDeleted?: boolean;
+}
+
+export interface LiveExam {
+  id: string;
+  title: string;
+  qLimit: number;
+  timeLimit: number; // in minutes
+  category: string; // "ALL" or specific category
+  startTime: string; // ISO datetime
+  expiryTime: string; // ISO datetime
+  createdAt: string;
+  updatedAt?: string;
+  questionIds?: string[];
+  // Course/Routine linked fields
+  routineId?: string;
+  courseId?: string;
+  courseName?: string;
+  selectedCategories?: string[];
+  selectedSubcategories?: string[];
+  selectedLeafCategories?: string[];
+  totalMarks?: number;
+  passMarks?: number;
+  questionSelection?: 'auto' | 'manual';
+  version?: number;
+  deletedAt?: string | null;
+  isDeleted?: boolean;
+}
+
+export interface Bookmark {
+  id: string;
+  userPhone: string;
+  questionId: string;
+  folderName: string;
+  createdAt: string;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  subHeading?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  version?: number;
+  deletedAt?: string | null;
+  isDeleted?: boolean;
+}
+
+export interface SubcategoryItem {
+  id: string;
+  name: string;
+  parentCategory: string;
+  parentCategoryId?: string;
+  date?: string; // e.g. YYYY-MM-DD
+  subHeading?: string;
+  text?: string; // Text bullet points for current affairs & notes
+  details?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  version?: number;
+  deletedAt?: string | null;
+  isDeleted?: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  details: string;
+  admin: string;
+  timestamp: string;
+  type?: 'delete' | 'update' | 'create' | 'bulk' | 'category' | 'exam' | 'routine' | 'user' | 'other';
+}
+
+export const formatBengaliDate = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const months = [
+      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+    ];
+    const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+    const dayStr = date.getDate().toString().replace(/\d/g, d => bnDigits[parseInt(d)]);
+    const monthStr = months[date.getMonth()];
+    const yearStr = date.getFullYear().toString().replace(/\d/g, d => bnDigits[parseInt(d)]);
+    return `${dayStr} ${monthStr}, ${yearStr}`;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+export const formatBengaliDateTime = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const dateFormatted = formatBengaliDate(dateStr);
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+    const timeStr = `${hours.toString().replace(/\d/g, d => bnDigits[parseInt(d)])}:${minutes < 10 ? '০' : ''}${minutes.toString().replace(/\d/g, d => bnDigits[parseInt(d)])} ${ampm}`;
+    return `${dateFormatted} (${timeStr})`;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
